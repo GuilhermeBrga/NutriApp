@@ -1,0 +1,5 @@
+/.lein-env
+/.idea
+/target
+.D_Store
+.env
