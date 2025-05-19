@@ -1,27 +1,3 @@
-; HANDLER PURO:
-
-;(ns api-nutri-app.handler
-;  (:require [compojure.core :refer :all]
-;            [compojure.route :as route]
-;            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]))
-;
-;(defroutes app-routes
-;           (GET "/" [] "Hello World")
-;           (route/not-found "Not Found"))
-;
-;(def app
-;  (wrap-defaults app-routes site-defaults))
-;
-; DEPENDENCIAS PURAS:
-;
-; :dependencies [[org.clojure/clojure "1.10.0"]
-;               [compojure "1.6.1"]
-;               [ring/ring-defaults "0.3.2"]]
-
-
-; =====================================================================================================================
-
-
 ;; HANDLER COM API USDA (GOVERNO AMERICANO)
 (ns api-nutri-app.handler
   (:require [compojure.core :refer :all]
