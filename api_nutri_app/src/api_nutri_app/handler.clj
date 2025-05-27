@@ -39,6 +39,19 @@
               :headers {"Content-Type" "application/json"}
               :body (json/encode (buscar-usda alimento))})
 
+           (GET "/comtem/user" []
+
+             (if (empty? @dados_user)
+
+               {:status 200
+                :headers {"Content-Type" "application/json"}
+                :body (json/encode {:vazio? true})}
+
+               {:status 200
+                :headers {"Content-Type" "application/json"}
+                :body (json/encode {:vazio? false})}))
+
+
            (POST "/registro/user" req
 
              (let [dados (json/decode (slurp (:body req)) true)]
