@@ -1,237 +1,212 @@
-; ========================= Opção com a lista ==========================
-
-;(ns nutri-app.core
-;  (:gen-class))
-;
-;(def alimentos ["Pao" "Ovo" "Cafe" "Bolo" "Arroz" "Macarrao" "Feijao" "Batata Cozida" "Frango" "Carne"])
-;
-;(def ativ_fis ["Corrida leve" "Corrida intensa" "Natacao" "Andar de bicicleta" "Musculacao"])
-;
-;(def alimentos_user (atom []))
-;
-;(def ativ_user (atom []))
-;
-;(defn menu_geral []
-;
-;  (let [header (str "   ________________________________\n"
-;                    "  |     Bem-Vindo ao NutriApp      |\n"
-;                    "  |________________________________|\n"
-;                    "   ----- Opcoes disponiveis ------\n\n")
-;
-;        body (str "  1 - Registrar alimentacao\n"
-;                  "  2 - Registrar atividade fisica\n"
-;                  "  3 - Gerar relatorio\n"
-;                  "  4 - Sair\n\n"
-;                  "  Escolha uma opcao: ")]
-;
-;    (print (str header body))
-;
-;    )
-;  )
-;
-;
-;(defn menu_alimentos []
-;
-;  (let [header (str "\n   ________________________________\n"
-;                    "  | NutriApp: Registro alimentacao |\n"
-;                    "  |________________________________|\n"
-;                    "   ----- Opcoes disponiveis ------\n\n")
-;
-;        body (clojure.string/join "\n" (map-indexed (fn [i alimento] (str "  " (inc i) " - " alimento)) alimentos))
-;
-;        footer (str "\n\n  0 - Voltar ao menu anterior\n\n  Escolha uma opcao: ")]
-;
-;    (print (str header body footer))
-;
-;    (flush)
-;
-;    (let [opcao_alimento (read)]
-;
-;      (cond (= opcao_alimento 0) (println "\n  Voltando ao menu anterior...\n")
-;
-;            (> opcao_alimento (count alimentos)) (println "\n  Opcao invalida... Tente novamente!\n")
-;
-;            :else
-;
-;            (do
-;              (print "  Informe a quantidade do alimento escolhido em gramas ou ml: ")
-;
-;              (flush)
-;
-;              (let [quantidade_alimento (read)]
-;
-;                (swap! alimentos_user conj [opcao_alimento quantidade_alimento])
-;
-;                (println "\n  Registro salvo com sucesso!\n")
-;
-;                )
-;              )
-;            )
-;      )
-;    )
-;  )
-;
-;
-;(defn menu_ativ_fis []
-;
-;  (let [header (str "\n   ________________________________\n"
-;                    "  | NutriApp: Registro ativ. Fisi. |\n"
-;                    "  |________________________________|\n"
-;                    "   ----- Opcoes disponiveis ------\n\n")
-;
-;        body (clojure.string/join "\n" (map-indexed (fn [i ativ_fis] (str "  " (inc i) " - " ativ_fis)) ativ_fis))
-;
-;        footer (str "\n\n  0 - Para voltar ao menu anterior\n\n  Escolha uma opcao: ")]
-;
-;    (print (str header body footer))
-;
-;    (flush)
-;
-;    (let [opcao_ativ (read)]
-;
-;      (cond (= opcao_ativ 0) (println "\n  Voltando ao menu anterior...\n")
-;
-;            (> opcao_ativ (count ativ_fis)) (println "\n  Opcao invalida... Tente novamente!\n")
-;
-;            :else
-;
-;            (do
-;
-;              (print "  Informe a duracao da atividade fisica em minutos: ")
-;
-;              (flush)
-;
-;              (let [tempo_ativ (read)]
-;
-;                (swap! ativ_user conj [opcao_ativ tempo_ativ])
-;
-;                (println "\n  Registro salvo com sucesso!\n")
-;                )
-;              )
-;            )
-;      )
-;    )
-;  )
-;
-;
-;(defn gerar_relatorio []
-;
-;  (println @alimentos_user)
-;
-;  (println @ativ_user)
-;
-;  )
-;
-;
-;(defn menu_acao [opcao]
-;
-;  (cond (= opcao 1) (menu_alimentos)
-;
-;        (= opcao 2) (menu_ativ_fis)
-;
-;        (= opcao 3) (gerar_relatorio)
-;
-;        :else
-;        (str "\nOpcao invalida... Tente novamente!")
-;
-;        )
-;  )
-;
-;
-;(defn menu-recursivo []
-;
-;  (menu_geral)
-;
-;  (flush)
-;
-;  (let [opcao (read)]
-;
-;    (if (= opcao 4)
-;
-;      (println "\n  Encerrando o programa...")
-;
-;      (do
-;
-;        (menu_acao opcao)
-;
-;        (recur)
-;
-;        )
-;      )
-;    )
-;  )
-;
-;(defn -main []
-;  (menu-recursivo)
-;  )
-
-
-; ========================= Opção sem a lista ==========================
-
-
 (ns nutri-app.core
+  (:require [clj-http.client :as http]
+            [cheshire.core :as json]
+            [clojure.string :as str])
   (:gen-class))
 
 (def ativ_fis ["Corrida leve" "Corrida intensa" "Natacao" "Andar de bicicleta" "Musculacao"])
 
-(def alimentos_user (atom []))
+(defn salvar_dados_user [nome idade peso altura sexo]
 
-(def ativ_user (atom []))
+  (let [dados {:nome nome
+               :idade idade
+               :peso peso
+               :altura altura
+               :sexo sexo}]
 
-(defn menu_geral []
+    (try
 
-  (let [header (str "   ________________________________\n"
-                    "  |     Bem-Vindo ao NutriApp      |\n"
-                    "  |________________________________|\n"
-                    "   ----- Opcoes disponiveis ------\n\n")
+      (http/post "http://localhost:3000/registro/user"
+                 {:body (json/encode dados)
+                  :headers {"Content-Type" "application/json"}})
 
-        body (str "  1 - Registrar alimentacao\n"
-                  "  2 - Registrar atividade fisica\n"
-                  "  3 - Gerar relatorio\n"
-                  "  4 - Sair\n\n"
-                  "  Escolha uma opcao: ")]
+      (println "\n  Registro salvo com sucesso!\n")
 
-    (print (str header body))
+      (catch Exception e
+
+        (println "  Falha ao enviar registro de usuario:" (.getMessage e))
+
+        )
+      )
+    )
+  )
+
+(defn salvar_alimento [alimento quantidade dataConsumo]
+
+  (let [dados {:alimento alimento
+               :quantidade quantidade
+               :dataConsumo dataConsumo}]
+
+    (try
+
+      (http/post "http://localhost:3000/registro/alimento"
+                 {:body (json/encode dados)
+                  :headers {"Content-Type" "application/json"}})
+
+      (println "\n  Registro salvo com sucesso!\n")
+
+      (catch Exception e
+
+        (println "  Falha ao enviar registro de alimento:" (.getMessage e))
+
+        )
+      )
+    )
+  )
+
+(defn salvar_atividade [atividade tempo dataAtividade]
+
+  (let [dados {:atividade atividade
+               :tempo tempo
+               :dataAtividade dataAtividade}]
+
+    (try
+
+      (http/post "http://localhost:3000/registro/atividade"
+                 {:body (json/encode dados)
+                  :headers {"Content-Type" "application/json"}})
+
+      (println "\n  Registro salvo com sucesso!\n")
+
+      (catch Exception e
+
+        (println "  Falha ao enviar registro de atividade:" (.getMessage e))
+
+        )
+      )
+    )
+  )
+
+(defn userRegistrado? []
+
+  (let [url "http://localhost:3000/comtem/user"
+
+        response (http/get url {:headers {"Content-Type" "application/json"}})
+
+        body (json/parse-string (:body response) true)
+
+        vazio? (:vazio? body)]
+
+    (not vazio?)
 
     )
   )
 
+(defn menu_geral []
 
-(defn menu_alimentos []
+  (print (str
+           "   ________________________________\n"
+           "  |     Bem-Vindo ao NutriApp      |\n"
+           "  |________________________________|\n"
+           "   ----- Opcoes disponiveis ------\n\n"
+           "  1 - Registrar dados do usuário\n"
+           "  2 - Registrar refeicao\n"
+           "  3 - Registrar atividade fisica\n"
+           "  4 - Sair\n\n"
+           "  Escolha uma opcao: "))
 
-  (let [header (str "\n   ________________________________\n"
-                    "  | NutriApp: Registro alimentacao |\n"
-                    "  |________________________________|\n"
-                    "   ----- Opcoes disponiveis ------\n\n")
+  (flush)
 
-        footer (str "  0 - Para voltar ao menu anterior\n\n  Digite o nome do seu alimento em inglês: ")]
+  )
 
-    (print (str header footer))
+(defn menu_dados_user []
 
-    (flush)
+  (if (= (userRegistrado?) true)
 
-    (let [opcao_alimento (read)]
+    (println "\n  Usuario já cadastrado!\n")
 
-      (cond (= opcao_alimento 0) (println "\n  Voltando ao menu anterior...\n")
+    (do
 
-            ; Verificar se o alimento foi encontrado na API
+      (print "\n  Informe seu nome: ")
 
-            :else
+      (flush)
 
-            (do
-              (print "  Informe a quantidade do alimento escolhido em gramas ou ml: ")
+      (let [nome (read-line)]
+
+        (print "  Informe sua idade (Em anos): ")
+
+        (flush)
+
+        (let [idade (read-line)]
+
+          (print "  Informe seu peso (Em kg): ")
+
+          (flush)
+
+          (let [peso (read-line)]
+
+            (print "  Informe sua altura (Em cm): ")
+
+            (flush)
+
+            (let [altura (read-line)]
+
+              (print "  Informe seu sexo (M - Masc / F - Fem): ")
 
               (flush)
 
-              (let [quantidade_alimento (read)]
+              (let [sexo (read-line)]
 
-                (swap! alimentos_user conj [opcao_alimento quantidade_alimento])
-
-                (println "\n  Registro salvo com sucesso!\n")
+                (salvar_dados_user nome idade peso altura sexo)
 
                 )
               )
             )
+          )
+        )
+      )
+    )
+  )
+
+
+
+(defn menu_alimentos []
+
+  (if (= (userRegistrado?) false)
+
+    (println "\n  Nenhum usuario cadastrado foi encontrado... Por favor, cadastre primeiro!\n")
+
+    (do
+
+      (print (str
+               "\n   ________________________________\n"
+               "  | NutriApp: Registro alimentacao |\n"
+               "  |________________________________|\n"
+               "   ----- Opcoes disponiveis ------\n\n"
+               "  0 - Para voltar ao menu anterior\n\n"
+               "  Digite o nome do alimento consumido: "))
+
+      (flush)
+
+      (let [opcao_alimento (read-line)]
+
+        (cond
+
+          (= opcao_alimento "0") (println "\n  Voltando ao menu anterior...\n")
+
+          :else
+
+          (do
+
+            (print "  Informe a quantidade do alimento escolhido (Em gramas): ")
+
+            (flush)
+
+            (let [quantidade_alimento (read-line)]
+
+              (print "  Informe a data da realização da atividade fisica (DD/MM/AAAA): ")
+
+              (flush)
+
+              (let [dataAlimentacao (read-line)]
+
+                (salvar_alimento opcao_alimento quantidade_alimento dataAlimentacao)
+
+                )
+              )
+            )
+          )
+        )
       )
     )
   )
@@ -239,85 +214,91 @@
 
 (defn menu_ativ_fis []
 
-  (let [header (str "\n   ________________________________\n"
-                    "  | NutriApp: Registro ativ. Fisi. |\n"
-                    "  |________________________________|\n"
-                    "   ----- Opcoes disponiveis ------\n\n")
+  (if (= (userRegistrado?) false)
 
-        body (clojure.string/join "\n" (map-indexed (fn [i ativ_fis] (str "  " (inc i) " - " ativ_fis)) ativ_fis))
+    (println "\n  Nenhum usuario cadastrado foi encontrado... Por favor, cadastre primeiro!\n")
 
-        footer (str "\n\n  0 - Voltar ao menu anterior\n\n  Escolha uma opcao: ")]
+    (do
 
-    (print (str header body footer))
+      (print (str
+               "\n   ________________________________\n"
+               "  | NutriApp: Registro ativ. Fisi. |\n"
+               "  |________________________________|\n"
+               "   ----- Opcoes disponiveis ------\n\n"
+               (str/join "\n" (map-indexed (fn [i a] (str "  " (inc i) " - " a)) ativ_fis))
+               "\n\n  0 - Voltar ao menu anterior\n\n"
+               "  Escolha uma opcao: "))
 
-    (flush)
+      (flush)
 
-    (let [opcao_ativ (read)]
+      (let
 
-      (cond (= opcao_ativ 0) (println "\n  Voltando ao menu anterior...\n")
+        [opcao_ativ (read-line)]
 
-            (> opcao_ativ (count ativ_fis)) (println "\n  Opcao invalida... Tente novamente!\n")
+        (cond
 
-            :else
+          (= opcao_ativ "0") (println "\n  Voltando ao menu anterior...\n")
 
-            (do
+          (> (Integer/parseInt opcao_ativ) (count ativ_fis)) (println "\n  Opcao invalida... Tente novamente!\n")
 
-              (print "  Informe a duracao da atividade fisica em minutos: ")
+          :else
+
+          (do
+
+            (print "  Informe a duracao da atividade fisica (Em minutos): ")
+
+            (flush)
+
+            (let
+
+              [tempo_ativ (read-line)
+               nome_atividade (nth ativ_fis (dec (Integer/parseInt opcao_ativ)))]
+
+              (print  "  Informe a data da realização da atividade fisica (DD/MM/AAAA): ")
 
               (flush)
 
-              (let [tempo_ativ (read)]
+              (let [dataAtividade (read-line)]
 
-                (swap! ativ_user conj [opcao_ativ tempo_ativ])
+                (salvar_atividade nome_atividade tempo_ativ dataAtividade)
 
-                (println "\n  Registro salvo com sucesso!\n")
                 )
               )
             )
+          )
+        )
       )
     )
   )
 
+(defn menu-acao [opcao]
 
-(defn gerar_relatorio []
+  (cond
 
-  (println @alimentos_user)
+    (= opcao "1") (menu_dados_user)
 
-  (println @ativ_user)
+    (= opcao "2") (menu_alimentos)
 
+    (= opcao "3") (menu_ativ_fis)
+
+    :else (println "\nOpcao invalida... Tente novamente!")
+
+    )
   )
-
-
-(defn menu_acao [opcao]
-
-  (cond (= opcao 1) (menu_alimentos)
-
-        (= opcao 2) (menu_ativ_fis)
-
-        (= opcao 3) (gerar_relatorio)
-
-        :else
-        (str "\nOpcao invalida... Tente novamente!")
-
-        )
-  )
-
 
 (defn menu-recursivo []
 
   (menu_geral)
 
-  (flush)
+  (let [opcao (read-line)]
 
-  (let [opcao (read)]
-
-    (if (= opcao 4)
+    (if (= opcao "4")
 
       (println "\n  Encerrando o programa...")
 
       (do
 
-        (menu_acao opcao)
+        (menu-acao opcao)
 
         (recur)
 
@@ -327,5 +308,7 @@
   )
 
 (defn -main []
+
   (menu-recursivo)
+
   )
