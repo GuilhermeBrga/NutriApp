@@ -39,7 +39,7 @@
               :headers {"Content-Type" "application/json"}
               :body (json/encode (buscar-usda alimento))})
 
-           (GET "/comtem/user" []
+           (GET "/contem/user" []
 
              (if (empty? @dados_user)
 
