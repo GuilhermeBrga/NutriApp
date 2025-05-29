@@ -79,7 +79,7 @@
 
 (defn userRegistrado? []
 
-  (let [url "http://localhost:3000/comtem/user"
+  (let [url "http://localhost:3000/contem/user"
 
         response (http/get url {:headers {"Content-Type" "application/json"}})
 
@@ -147,8 +147,12 @@
 
               (let [sexo (read-line)]
 
-                (salvar_dados_user nome idade peso altura sexo)
+                (if (or (= sexo "M") (= sexo "F"))
 
+                  (salvar_dados_user nome idade peso altura sexo)
+
+                  (print "\n  Opcao invalida... Tente novamente!\n\n")
+                  )
                 )
               )
             )
