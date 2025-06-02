@@ -12,7 +12,8 @@
 (def alimentos_armazenados (atom []))
 (def atividades_armazenadas (atom []))
 
-(def api-key (env :usda-api-key))
+(def api-key-usda (env :usda-api-key))
+(def api-key-ninja (env :ninjas-api-key))
 
 
 (defn traduzir-alimento [texto de para]
@@ -38,7 +39,7 @@
         params {:query alimento
                 :dataType ["Survey (FNDDS)"]
                 :pageSize 10
-                :api_key api-key}
+                :api_key api-key-usda}
         response (http/get url {:query-params params :as :json})
         items (get-in response [:body :foods])]
     (mapv (fn [item]
@@ -51,6 +52,24 @@
           items))
 )
 
+
+(defn buscar-calorias
+  [atividade & {:keys [weight duration]}]
+  (let [url "https://api.api-ninjas.com/v1/caloriesburned"
+        query-params (cond-> {"activity" atividade}
+                       weight (assoc "weight" weight)
+                       duration (assoc "duration" duration))]
+    (try
+      (let [response (http/get url
+                               {:headers {"X-Api-Key" api-key-ninja}
+                                :query-params query-params
+                                :as :json})]
+        (:body response))
+      (catch Exception e
+        (println "Erro ao buscar calorias:" (.getMessage e))
+        ;; Retorne nil ou um mapa de erro para ser tratado pela rota
+        nil)))
+)
 
 
 (defn buscar-resultados [alimento]
@@ -81,6 +100,21 @@
                {:status 200
                 :headers {"Content-Type" "application/json"}
                 :body (json/encode {:vazio? false})})
+  )
+
+
+  (GET "/calorias" {{:keys [atividade weight duration]} :params}
+    (let [;; Converte weight e duration para números, se existirem
+          parsed-weight (when weight (Integer/parseInt weight))
+          parsed-duration (when duration (Integer/parseInt duration))
+
+          ;; Passa os argumentos opcionais para buscar-calorias
+          calorias (buscar-calorias atividade
+                                    :weight parsed-weight
+                                    :duration parsed-duration)]
+      {:status 200
+       :headers {"Content-Type" "application/json"}
+       :body (json/encode calorias)})
   )
 
 
