@@ -4,7 +4,8 @@
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [clj-http.client :as http]
             [cheshire.core :as json]
-            [environ.core :refer [env]]))
+            [environ.core :refer [env]])
+  )
 
 (def dados_user (atom []))
 (def alimentos_armazenados (atom []))
@@ -12,12 +13,32 @@
 
 (def api-key (env :usda-api-key))
 
+(defn traduzir-alimento [texto de para]
+
+  (let [url "http://localhost:5000/translate"
+
+        body {:q texto
+              :source de
+              :target para
+              :format "text"}
+
+        response (http/post url {:body (json/encode body)
+                                 :headers {"Content-Type" "application/json"}
+                                 :as :json})]
+
+    (:translatedText (:body response))
+
+    )
+  )
+
+
 (defn buscar-usda [alimento]
 
   (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
 
         params {:query alimento
-                :pageSize 1
+                :dataType ["Survey (FNDDS)"]
+                :pageSize 10
                 :api_key api-key}
 
         response (http/get url {:query-params params :as :json})
@@ -25,19 +46,46 @@
         items (get-in response [:body :foods])]
 
     (mapv (fn [item]
-            {:descricao (:description item)
-             :gramas    (:servingSize item)
-             :energia-kcal (get-in item [:foodNutrients 0 :value])})
-          items)))
+
+            (let [energia (some #(when (= "Energy" (:nutrientName %))
+                                   (:value %))
+                                (:foodNutrients item))
+
+                  descricao-pt (traduzir-alimento (:description item) "en" "pt")]
+
+              {:descricao descricao-pt
+               :energia-kcal energia}))
+
+          items)
+    )
+  )
+
+
+
+(defn buscar-resultados [alimento]
+
+  (buscar-usda (traduzir-alimento alimento "pt" "en"))
+
+  )
+
 
 (defroutes app-routes
 
-           (GET "/" [] "NutriApp API Online!")
+           (GET "/" [] "Nutri App by Arthur & Guilherme")
 
-           (GET "/usda" [alimento]
-             {:status 200
-              :headers {"Content-Type" "application/json"}
-              :body (json/encode (buscar-usda alimento))})
+           (POST "/traduzir" request
+
+             (let [params (json/decode (slurp (:body request)) true)
+                   texto (:texto params)
+                   de    (:de params)
+                   para  (:para params)]
+
+               {:status 200
+                :headers {"Content-Type" "application/json"}
+                :body (json/encode (traduzir-alimento texto de para))}
+
+               )
+             )
 
            (GET "/contem/user" []
 
@@ -49,7 +97,10 @@
 
                {:status 200
                 :headers {"Content-Type" "application/json"}
-                :body (json/encode {:vazio? false})}))
+                :body (json/encode {:vazio? false})}
+
+               )
+             )
 
 
            (POST "/registro/user" req
@@ -60,7 +111,17 @@
 
                (println "Dados de usuário recebidos:" dados)
 
-               {:status 200 :body "Dados registrados!"}))
+               {:status 200 :body "Dados registrados!"}
+
+               )
+             )
+
+           (GET "/usda" [alimento]
+             {:status 200
+              :headers {"Content-Type" "application/json"}
+              :body (json/encode (buscar-resultados alimento))}
+             )
+
 
            (POST "/registro/alimento" req
 
@@ -70,7 +131,10 @@
 
                (println "Alimento recebido:" dados)
 
-               {:status 200 :body "Alimento registrado!"}))
+               {:status 200 :body "Alimento registrado!"}
+
+               )
+             )
 
            (POST "/registro/atividade" req
 
@@ -80,7 +144,11 @@
 
                (println "Atividade recebida:" dados)
 
-               {:status 200 :body "Atividade registrada!"}))
+               {:status 200
+                :body "Atividade registrada!"}
+
+               )
+             )
 
            (GET "/dados" []
 
@@ -90,9 +158,17 @@
 
               :body (json/encode {:alimentos @alimentos_armazenados
                                   :atividades @atividades_armazenadas
-                                  :dados @dados_user})})
+                                  :dados @dados_user})}
 
-           (route/not-found "Not Found"))
+             )
+
+
+           (route/not-found "Not Found")
+
+           )
 
 (def app
-  (wrap-defaults app-routes (assoc site-defaults :security {:anti-forgery false})))
+
+  (wrap-defaults app-routes (assoc site-defaults :security {:anti-forgery false}))
+
+  )
