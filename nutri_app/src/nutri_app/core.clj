@@ -6,6 +6,23 @@
 
 (def ativ_fis ["Corrida leve" "Corrida intensa" "Natacao" "Andar de bicicleta" "Musculacao"])
 
+; -- Configuração dos dados do usuário ---------------------------------------------------------------------------------
+
+(defn userRegistrado? []
+
+  (let [url "http://localhost:3000/contem/user"
+
+        response (http/get url {:headers {"Content-Type" "application/json"}})
+
+        body (json/parse-string (:body response) true)
+
+        vazio? (:vazio? body)]
+
+    (not vazio?)
+
+    )
+  )
+
 (defn salvar_dados_user [nome idade peso altura sexo]
 
   (let [dados {:nome nome
@@ -31,10 +48,33 @@
     )
   )
 
-(defn salvar_alimento [alimento quantidade dataConsumo]
+; -- Configuração dos dados dos alimentos ------------------------------------------------------------------------------
+
+(defn buscar_alimento [alimento]
+
+  (try
+
+    (let [response (http/get "http://localhost:3000/usda"
+                             {:query-params {"alimento" alimento}
+                              :as :json})]
+
+      (:body response))
+
+    (catch Exception e
+
+      (println "Erro ao buscar alimento:" (.getMessage e))
+
+      nil)))
+
+(defn kcal-ajustado [gramas-usuario kcal-usda]
+  (/ (* gramas-usuario kcal-usda) 100)
+  )
+
+(defn salvar_alimento [alimento quantidade kcal dataConsumo]
 
   (let [dados {:alimento alimento
                :quantidade quantidade
+               :kcal kcal
                :dataConsumo dataConsumo}]
 
     (try
@@ -53,6 +93,8 @@
       )
     )
   )
+
+; -- Configuração dos dados das atividades físicas ---------------------------------------------------------------------
 
 (defn salvar_atividade [atividade tempo dataAtividade]
 
@@ -77,20 +119,7 @@
     )
   )
 
-(defn userRegistrado? []
 
-  (let [url "http://localhost:3000/contem/user"
-
-        response (http/get url {:headers {"Content-Type" "application/json"}})
-
-        body (json/parse-string (:body response) true)
-
-        vazio? (:vazio? body)]
-
-    (not vazio?)
-
-    )
-  )
 
 (defn menu_geral []
 
@@ -116,6 +145,11 @@
     (println "\n  Usuario já cadastrado!\n")
 
     (do
+
+      (print (str "\n   ________________________________\n"
+                  "  | NutriApp: Cadastro de usuario  |\n"
+                  "  |________________________________|\n"
+                  "  ------ Registro de usuario ------\n"))
 
       (print "\n  Informe seu nome: ")
 
@@ -163,49 +197,76 @@
   )
 
 
-
 (defn menu_alimentos []
 
-  (if (= (userRegistrado?) false)
+  (if (not (userRegistrado?))
 
     (println "\n  Nenhum usuario cadastrado foi encontrado... Por favor, cadastre primeiro!\n")
 
     (do
 
-      (print (str
-               "\n   ________________________________\n"
-               "  | NutriApp: Registro alimentacao |\n"
-               "  |________________________________|\n"
-               "   ----- Opcoes disponiveis ------\n\n"
-               "  0 - Para voltar ao menu anterior\n\n"
-               "  Digite o nome do alimento consumido: "))
+      (println
+
+        (str "\n   ________________________________\n"
+             "  | NutriApp: Registro alimentacao |\n"
+             "  |________________________________|\n"
+             "   ------ Registrar alimento ------\n"))
+
+      (print "  Digite o nome do alimento consumido (ou 0 para voltar): ")
 
       (flush)
 
-      (let [opcao_alimento (read-line)]
+      (let [nome-alimento (read-line)]
 
-        (cond
+        (if (= nome-alimento "0")
 
-          (= opcao_alimento "0") (println "\n  Voltando ao menu anterior...\n")
+          (println "\n  Voltando ao menu anterior...\n")
 
-          :else
+          (let [alimentos (buscar_alimento nome-alimento)]
 
-          (do
+            (if (or (nil? alimentos) (empty? alimentos))
 
-            (print "  Informe a quantidade do alimento escolhido (Em gramas): ")
+              (println "Nenhum alimento encontrado para esse nome!")
 
-            (flush)
+              (do
 
-            (let [quantidade_alimento (read-line)]
+                (doseq [[idx alimento] (map-indexed vector alimentos)]
 
-              (print "  Informe a data da realização da atividade fisica (DD/MM/AAAA): ")
+                  (println (str "\n  " (inc idx) " - " (:descricao alimento))))
 
-              (flush)
+                (print "\n  Digite o número do alimento escolhido (ou 0 para voltar): ")
 
-              (let [dataAlimentacao (read-line)]
+                (flush)
 
-                (salvar_alimento opcao_alimento quantidade_alimento dataAlimentacao)
+                (let [opcao (read-line)]
 
+                  (if (= opcao "0")
+
+                    (println "\n  Voltando ao menu anterior...\n")
+
+                    (let [indice (dec (Integer/parseInt opcao))
+
+                          alimento-escolhido (nth alimentos indice {:descricao "Desconhecido" :energia-kcal "N/A"})]
+
+                      (print "  Informe a quantidade do alimento escolhido (em gramas): ")
+
+                      (flush)
+
+                      (let [quantidade (read-line)]
+
+                        (print "  Informe a data do consumo (DD/MM/AAAA): ")
+
+                        (flush)
+
+                        (let [data (read-line)
+                              ]
+
+                          (salvar_alimento (:descricao alimento-escolhido) quantidade (str (kcal-ajustado (Integer/parseInt quantidade) (:energia-kcal alimento-escolhido))) data)
+                          )
+                        )
+                      )
+                    )
+                  )
                 )
               )
             )
@@ -218,7 +279,7 @@
 
 (defn menu_ativ_fis []
 
-  (if (= (userRegistrado?) false)
+  (if (not (userRegistrado?))
 
     (println "\n  Nenhum usuario cadastrado foi encontrado... Por favor, cadastre primeiro!\n")
 
