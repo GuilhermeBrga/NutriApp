@@ -20,10 +20,6 @@
 
     (not vazio?)
 
-        (println "  Falha ao enviar registro de usuario:" (.getMessage e))
-
-        )
-      )
     )
   )
 
@@ -70,9 +66,15 @@
 
       nil)))
 
-(defn kcal-ajustado [gramas-usuario kcal-usda]
+(defn kcal-ajustado-alimento [gramas-usuario kcal-usda]
   (/ (* gramas-usuario kcal-usda) 100)
-  )
+)
+
+
+(defn kcal-ajustado-exercicio [tempo kcal-exercicio]
+  (* tempo kcal-exercicio)
+)
+
 
 (defn salvar_alimento [alimento quantidade kcal dataConsumo]
 
@@ -181,9 +183,7 @@
 
               (print "  Informe seu sexo (M - Masc / F - Fem): ")
 
-      (http/post "http://localhost:3000/registro/atividade"
-                 {:body (json/encode dados)
-                  :headers {"Content-Type" "application/json"}})
+              (flush)
 
               (let [sexo (read-line)]
 
@@ -202,7 +202,6 @@
     )
   )
 
-(defn menu_geral []
 
 (defn menu_alimentos []
 
@@ -268,7 +267,7 @@
                         (let [data (read-line)
                               ]
 
-                          (salvar_alimento (:descricao alimento-escolhido) quantidade (str (kcal-ajustado (Integer/parseInt quantidade) (:energia-kcal alimento-escolhido))) data)
+                          (salvar_alimento (:descricao alimento-escolhido) quantidade (str (kcal-ajustado-alimento (Integer/parseInt quantidade) (:energia-kcal alimento-escolhido))) data)
                           )
                         )
                       )
@@ -283,7 +282,6 @@
     )
   )
 
-(defn menu_ativ_fis []
 
 (defn menu_ativ_fis []
 
