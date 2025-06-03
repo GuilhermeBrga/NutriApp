@@ -1,5 +1,3 @@
-;; HANDLER COM API USDA (GOVERNO AMERICANO)
-
 (ns api-nutri-app.handler
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
@@ -17,7 +15,7 @@
 (def api-key-ninja (env :ninjas-api-key))
 
 
-(defn traduzir-alimento [texto de para]
+(defn traduzir-resultados [texto de para]
   (let [url "http://localhost:5000/translate"
         body {:q texto
               :source de
@@ -30,55 +28,58 @@
 )
 
 
-(defn kcal-ajustado [gramas-usuario kcal-usda]
-  (/ (* gramas-usuario kcal-usda) 100)
-)
-
 
 (defn buscar-usda [alimento]
   (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
-
         params {:query alimento
                 :dataType ["Survey (FNDDS)"]
                 :pageSize 10
                 :api_key api-key-usda}
-
         response (http/get url {:query-params params :as :json})
-
         items (get-in response [:body :foods])]
-
     (mapv (fn [item]
             (let [energia (some #(when (= "Energy" (:nutrientName %))
                                    (:value %))
                                 (:foodNutrients item))
-                  descricao-pt (traduzir-alimento (:description item) "en" "pt")]
+                  descricao-pt (traduzir-resultados (:description item) "en" "pt")]
               {:descricao descricao-pt
                :energia-kcal energia}))
           items))
 )
 
 
-(defn buscar-calorias
-  [atividade & {:keys [weight duration]}]
+(defn calorias-min [cal-hora]
+  (/ cal-hora 60)
+)
+
+
+(defn buscar-calorias [atividade]
   (let [url "https://api.api-ninjas.com/v1/caloriesburned"
-        query-params (cond-> {"activity" atividade}
-                       weight (assoc "weight" weight)
-                       duration (assoc "duration" duration))]
+        query-params {"activity" atividade}]
     (try
       (let [response (http/get url
                                {:headers {"X-Api-Key" api-key-ninja}
                                 :query-params query-params
-                                :as :json})]
-        (:body response))
+                                :as :json})
+            dados (:body response)]
+        (mapv (fn [item]
+                (let [descricao-pt (traduzir-resultados (:name item) "en" "pt")]
+                  {:descricao descricao-pt
+                   :energia-kcal (calorias-min (:calories_per_hour item))}))
+              dados))
       (catch Exception e
         (println "Erro ao buscar calorias:" (.getMessage e))
-        ;; Retorne nil ou um mapa de erro para ser tratado pela rota
-        nil)))
+        nil))))
+
+
+
+(defn buscar-resultados-usda [alimento]
+  (buscar-usda (traduzir-resultados alimento "pt" "en"))
 )
 
 
-(defn buscar-resultados [alimento]
-  (buscar-usda (traduzir-alimento alimento "pt" "en"))
+(defn buscar-resultados-ninjas [exercicio]
+  (buscar-calorias (traduzir-resultados exercicio "pt" "en"))
 )
 
 
@@ -90,7 +91,7 @@
   (GET "/usda" [alimento]
        {:status 200
         :headers {"Content-Type" "application/json"}
-        :body (json/encode (buscar-resultados alimento))}
+        :body (json/encode (buscar-resultados-usda alimento))}
   )
 
 
@@ -108,18 +109,12 @@
   )
 
 
-  (GET "/calorias" {{:keys [atividade weight duration]} :params}
-    (let [;; Converte weight e duration para números, se existirem
-          parsed-weight (when weight (Integer/parseInt weight))
-          parsed-duration (when duration (Integer/parseInt duration))
-
-          ;; Passa os argumentos opcionais para buscar-calorias
-          calorias (buscar-calorias atividade
-                                    :weight parsed-weight
-                                    :duration parsed-duration)]
+  (GET "/calorias" {{:keys [atividade]} :params}
+    (let [
+          calorias (buscar-calorias atividade)]
       {:status 200
        :headers {"Content-Type" "application/json"}
-       :body (json/encode calorias)})
+       :body (json/encode (buscar-resultados-ninjas atividade))})
   )
 
 
@@ -130,7 +125,7 @@
             para  (:para params)]
         {:status 200
          :headers {"Content-Type" "application/json"}
-         :body (json/encode (traduzir-alimento texto de para))})
+         :body (json/encode (traduzir-resultados texto de para))})
   )
 
 
