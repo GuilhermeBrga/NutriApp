@@ -1,4 +1,5 @@
 ;; HANDLER COM API USDA (GOVERNO AMERICANO)
+
 (ns api-nutri-app.handler
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
@@ -36,12 +37,16 @@
 
 (defn buscar-usda [alimento]
   (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
+
         params {:query alimento
                 :dataType ["Survey (FNDDS)"]
                 :pageSize 10
                 :api_key api-key-usda}
+
         response (http/get url {:query-params params :as :json})
+
         items (get-in response [:body :foods])]
+
     (mapv (fn [item]
             (let [energia (some #(when (= "Energy" (:nutrientName %))
                                    (:value %))

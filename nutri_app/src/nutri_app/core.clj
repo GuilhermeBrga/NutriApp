@@ -20,6 +20,10 @@
 
     (not vazio?)
 
+        (println "  Falha ao enviar registro de usuario:" (.getMessage e))
+
+        )
+      )
     )
   )
 
@@ -177,7 +181,9 @@
 
               (print "  Informe seu sexo (M - Masc / F - Fem): ")
 
-              (flush)
+      (http/post "http://localhost:3000/registro/atividade"
+                 {:body (json/encode dados)
+                  :headers {"Content-Type" "application/json"}})
 
               (let [sexo (read-line)]
 
@@ -196,6 +202,7 @@
     )
   )
 
+(defn menu_geral []
 
 (defn menu_alimentos []
 
@@ -276,6 +283,7 @@
     )
   )
 
+(defn menu_ativ_fis []
 
 (defn menu_ativ_fis []
 
