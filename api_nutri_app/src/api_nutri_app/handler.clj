@@ -5,97 +5,118 @@
             [clj-http.client :as http]
             [cheshire.core :as json]
             [environ.core :refer [env]])
-)
+  )
 
 (def dados_user (atom []))
-(def alimentos_armazenados (atom []))
-(def atividades_armazenadas (atom []))
+(def alimentos_user (atom []))
+(def atividades_user (atom []))
 
-(def api-key-usda (env :usda-api-key))
-(def api-key-ninja (env :ninjas-api-key))
+(def api_key_usda (env :usda-api-key))
+(def api_key_ninja (env :ninjas-api-key))
 
+(defn traduzir_resultados [texto de para]
 
-(defn traduzir-resultados [texto de para]
   (let [url "http://localhost:5000/translate"
+
         body {:q texto
               :source de
               :target para
               :format "text"}
+
         response (http/post url {:body (json/encode body)
                                  :headers {"Content-Type" "application/json"}
                                  :as :json})]
-    (:translatedText (:body response)))
-)
 
+    (:translatedText (:body response))
 
-
-(defn buscar-usda [alimento]
-  (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
-        params {:query alimento
-                :dataType ["Survey (FNDDS)"]
-                :pageSize 10
-                :api_key api-key-usda}
-        response (http/get url {:query-params params :as :json})
-        items (get-in response [:body :foods])]
-    (mapv (fn [item]
-            (let [energia (some #(when (= "Energy" (:nutrientName %))
-                                   (:value %))
-                                (:foodNutrients item))
-                  descricao-pt (traduzir-resultados (:description item) "en" "pt")]
-              {:descricao descricao-pt
-               :energia-kcal energia}))
-          items))
-)
-
-
-(defn calorias-min [cal-hora]
-  (/ cal-hora 60)
-)
-
-
-(defn buscar-calorias [atividade]
-  (let [url "https://api.api-ninjas.com/v1/caloriesburned"
-        query-params {"activity" atividade}]
-    (try
-      (let [response (http/get url
-                               {:headers {"X-Api-Key" api-key-ninja}
-                                :query-params query-params
-                                :as :json})
-            dados (:body response)]
-        (mapv (fn [item]
-                (let [descricao-pt (traduzir-resultados (:name item) "en" "pt")]
-                  {:descricao descricao-pt
-                   :energia-kcal (calorias-min (:calories_per_hour item))}))
-              dados))
-      (catch Exception e
-        (println "Erro ao buscar calorias:" (.getMessage e))
-        nil))))
-
-
-
-(defn buscar-resultados-usda [alimento]
-  (buscar-usda (traduzir-resultados alimento "pt" "en"))
-)
-
-
-(defn buscar-resultados-ninjas [exercicio]
-  (buscar-calorias (traduzir-resultados exercicio "pt" "en"))
-)
-
-
-(defroutes app-routes
-  
-  (GET "/" [] "Nutri App by Arthur & Guilherme")
- 
-
-  (GET "/usda" [alimento]
-       {:status 200
-        :headers {"Content-Type" "application/json"}
-        :body (json/encode (buscar-resultados-usda alimento))}
+    )
   )
 
 
-  (GET "/contem/user" []
+(defn buscar_alimento [alimento]
+
+  (let [url "https://api.nal.usda.gov/fdc/v1/foods/search"
+
+        params {:query alimento
+                :dataType ["Survey (FNDDS)"]
+                :pageSize 10
+                :api_key api_key_usda}
+
+        response (http/get url {:query-params params :as :json})
+
+        items (get-in response [:body :foods])]
+
+    (mapv (fn [item]
+
+            (let [energia (some #(when (= "Energy" (:nutrientName %))
+                                   (:value %))
+                                (:foodNutrients item))
+
+                  descricao-pt (traduzir_resultados (:description item) "en" "pt")]
+
+              {:descricao descricao-pt
+               :energia-kcal energia}))
+
+          items)
+    )
+  )
+
+
+(defn buscar-resultados_alimento [alimento]
+
+  (buscar_alimento (traduzir_resultados alimento "pt" "en"))
+
+  )
+
+(defn calorias_min [cal_hora]
+  (float (/ cal_hora 60))
+  )
+
+(defn buscar_atividade_fisica [atividade]
+
+  (let [url "https://api.api-ninjas.com/v1/caloriesburned"
+        query-params {"activity" atividade}]
+
+    (try
+
+      (let [response (http/get url
+                               {:headers {"X-Api-Key" api_key_ninja}
+                                :query-params query-params
+                                :as :json})
+
+            dados (:body response)]
+
+        (mapv (fn [item]
+
+                (let [descricao_pt (traduzir_resultados (:name item) "en" "pt")]
+
+                  {:descricao descricao_pt
+
+                   :energia-kcal (calorias_min (:calories_per_hour item))}))
+
+              dados))
+
+      (catch Exception e
+
+        (println "Erro ao buscar calorias:" (.getMessage e))
+
+        )
+      )
+    )
+  )
+
+(defn buscar_resultados_atividade_fisica [exercicio]
+
+  (buscar_atividade_fisica (traduzir_resultados exercicio "pt" "en"))
+
+  )
+
+
+(defroutes app-routes
+
+           (GET "/" [] "Nutri App by Arthur & Guilherme")
+
+           (GET "/contem/user" []
 
              (if (empty? @dados_user)
 
@@ -105,66 +126,114 @@
 
                {:status 200
                 :headers {"Content-Type" "application/json"}
-                :body (json/encode {:vazio? false})})
-  )
+                :body (json/encode {:vazio? false})}
+
+               )
+             )
+
+           (POST "/registro/user" req
+
+             (let [dados (json/decode (slurp (:body req)) true)]
+
+               (swap! dados_user conj dados)
+
+               (println "Dados de usuário recebidos:" dados)
+
+               {:status 200 :body "Dados registrados!"}
+
+               )
+             )
+
+           (POST "/traduzir" request
+
+             (let [params (json/decode (slurp (:body request)) true)
+                   texto (:texto params)
+                   de    (:de params)
+                   para  (:para params)]
+
+               {:status 200
+
+                :headers {"Content-Type" "application/json"}
+
+                :body (json/encode (traduzir_resultados texto de para))}
+
+               )
+             )
 
 
-  (GET "/calorias" {{:keys [atividade]} :params}
-    (let [
-          calorias (buscar-calorias atividade)]
-      {:status 200
-       :headers {"Content-Type" "application/json"}
-       :body (json/encode (buscar-resultados-ninjas atividade))})
-  )
+           (GET "/buscar/alimento" [alimento]
+
+             {:status 200
+
+              :headers {"Content-Type" "application/json"}
+
+              :body (json/encode (buscar-resultados_alimento alimento))}
+
+             )
 
 
-  (POST "/traduzir" request
-      (let [params (json/decode (slurp (:body request)) true)
-            texto (:texto params)
-            de    (:de params)
-            para  (:para params)]
-        {:status 200
-         :headers {"Content-Type" "application/json"}
-         :body (json/encode (traduzir-resultados texto de para))})
-  )
+           (POST "/registro/alimento" req
+
+             (let [dados (json/decode (slurp (:body req)) true)]
+
+               (swap! alimentos_user conj dados)
+
+               (println "Alimento recebido:" dados)
+
+               {:status 200
+
+                :body "Alimento registrado!"}
+
+               )
+             )
+
+           (GET "/buscar/atividade" [atividade]
+
+             (let []
+
+               {:status 200
+
+                :headers {"Content-Type" "application/json"}
+
+                :body (json/encode (buscar_resultados_atividade_fisica atividade))}
+
+               )
+             )
 
 
-  (POST "/registro/user" req
+           (POST "/registro/atividade" req
 
-    (let [dados (json/decode (slurp (:body req)) true)]
-      (swap! dados_user conj dados)
-      (println "Dados de usuário recebidos:" dados)
-      {:status 200 :body "Dados registrados!"})
-  )
+             (let [dados (json/decode (slurp (:body req)) true)]
 
-  (POST "/registro/alimento" req
-    (let [dados (json/decode (slurp (:body req)) true)]
-      (swap! alimentos_armazenados conj dados)
-      (println "Alimento recebido:" dados)
-      {:status 200 :body "Alimento registrado!"})
-  )
+               (swap! atividades_user conj dados)
 
-  (POST "/registro/atividade" req
-    (let [dados (json/decode (slurp (:body req)) true)]
-      (swap! atividades_armazenadas conj dados)
-      (println "Atividade recebida:" dados)
-      {:status 200 :body "Atividade registrada!"})
-  )
+               (println "Atividade recebida:" dados)
 
-  (GET "/dados" []
-    {:status 200
-    :headers {"Content-Type" "application/json"}
-    :body (json/encode {:alimentos @alimentos_armazenados
-                        :atividades @atividades_armazenadas
-                        :dados @dados_user})}
-  )
-  
+               {:status 200
+                :body "Atividade registrada!"}
 
-  (route/not-found "Not Found")
+               )
+             )
 
-)
+           (GET "/dados" []
+
+             {:status 200
+
+              :headers {"Content-Type" "application/json"}
+
+              :body (json/encode {:alimentos @alimentos_user
+                                  :atividades @atividades_user
+                                  :dados @dados_user})}
+
+             )
+
+
+           (route/not-found "Not Found")
+
+           )
 
 (def app
-  (wrap-defaults app-routes (assoc site-defaults :security {:anti-forgery false}))
-)
 
+  (wrap-defaults app-routes (assoc site-defaults :security {:anti-forgery false}))
+
+  )
