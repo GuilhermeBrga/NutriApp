@@ -165,6 +165,6 @@
 )
 
 (def app
-  (wrap-defaults app-routes site-defaults)
+  (wrap-defaults app-routes (assoc site-defaults :security {:anti-forgery false}))
 )
 
