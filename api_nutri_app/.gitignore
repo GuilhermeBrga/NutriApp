@@ -1,5 +1,5 @@
 /.lein-env
 /.idea
 /target
-.D_Store
+.DS_Store
 .env
