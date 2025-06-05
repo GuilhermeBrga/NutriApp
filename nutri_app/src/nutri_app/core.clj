@@ -512,7 +512,7 @@
     (if (= opcao "5")
       (println "\n  Encerrando o programa...")
       (do
-        (menu-acao opcao)
+        (menu_acao opcao)
         (recur)
         )
       )
