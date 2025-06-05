@@ -56,9 +56,9 @@
                                    (:value %))
                                 (:foodNutrients item))
 
-                  descricao-pt (traduzir_resultados (:description item) "en" "pt")]
+                  descricao_pt (traduzir_resultados (:description item) "en" "pt")]
 
-              {:descricao descricao-pt
+              {:descricao descricao_pt
                :energia-kcal energia}))
 
           items)
@@ -66,7 +66,7 @@
   )
 
 
-(defn buscar-resultados_alimento [alimento]
+(defn buscar_resultados_alimento [alimento]
 
   (buscar_alimento (traduzir_resultados alimento "pt" "en"))
 
@@ -79,13 +79,13 @@
 (defn buscar_atividade_fisica [atividade]
 
   (let [url "https://api.api-ninjas.com/v1/caloriesburned"
-        query-params {"activity" atividade}]
+        query_params {"activity" atividade}]
 
     (try
 
       (let [response (http/get url
                                {:headers {"X-Api-Key" api_key_ninja}
-                                :query-params query-params
+                                :query-params query_params
                                 :as :json})
 
             dados (:body response)]
@@ -171,7 +171,7 @@
 
               :headers {"Content-Type" "application/json"}
 
-              :body (json/encode (buscar-resultados_alimento alimento))}
+              :body (json/encode (buscar_resultados_alimento alimento))}
 
              )
 
@@ -259,15 +259,15 @@
            (GET "/dados/alimento" []
              (let [formatter (DateTimeFormatter/ofPattern "dd/MM/yyyy")
                    {:keys [inicio fim]} (first @datas_relatorio)
-                   inicio-ts (.toEpochDay (LocalDate/parse inicio formatter))
-                   fim-ts    (.toEpochDay (LocalDate/parse fim formatter))
+                   inicio_ts (.toEpochDay (LocalDate/parse inicio formatter))
+                   fim_ts    (.toEpochDay (LocalDate/parse fim formatter))
                    alimentos_filtrados (filter
 
                                          (fn [{:keys [dataConsumo]}]
 
-                                           (let [data-ts (.toEpochDay (LocalDate/parse dataConsumo formatter))]
+                                           (let [data_ts (.toEpochDay (LocalDate/parse dataConsumo formatter))]
 
-                                             (<= inicio-ts data-ts fim-ts)))
+                                             (<= inicio_ts data_ts fim_ts)))
 
                                          @alimentos_user)]
 
@@ -278,15 +278,15 @@
            (GET "/dados/ativ_fis" []
              (let [formatter (DateTimeFormatter/ofPattern "dd/MM/yyyy")
                    {:keys [inicio fim]} (first @datas_relatorio)
-                   inicio-ts (.toEpochDay (LocalDate/parse inicio formatter))
-                   fim-ts    (.toEpochDay (LocalDate/parse fim formatter))
+                   inicio_ts (.toEpochDay (LocalDate/parse inicio formatter))
+                   fim_ts    (.toEpochDay (LocalDate/parse fim formatter))
                    ativ_fis_filtrados (filter
 
                                         (fn [{:keys [dataAtividade]}]
 
-                                           (let [data-ts (.toEpochDay (LocalDate/parse dataAtividade formatter))]
+                                           (let [data_ts (.toEpochDay (LocalDate/parse dataAtividade formatter))]
 
-                                             (<= inicio-ts data-ts fim-ts)))
+                                             (<= inicio_ts data_ts fim_ts)))
 
                                          @atividades_user)]
 
