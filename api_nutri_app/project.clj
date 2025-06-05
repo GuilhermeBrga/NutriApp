@@ -9,7 +9,8 @@
                  [cheshire "5.11.0"]
                  [environ "1.2.0"]]
   :plugins [[lein-ring "0.12.5"]]
-  :ring {:handler api-nutri-app.handler/app}
+  :ring {:handler api-nutri-app.handler/app
+         :open-browser? false}
   :profiles
   {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
                         [ring/ring-mock "0.3.2"]]}})
