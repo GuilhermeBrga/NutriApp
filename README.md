@@ -38,7 +38,10 @@ Em seguida, execute um dos comandos abaixo:
 docker compose up
 // ou, se necessário: docker-compose up
 ```
-O serviço será iniciado na porta 5000.
+O serviço será iniciado na porta 5000. Teste-o com a url:
+```bash
+http://localhost:5000/languages
+```
 
 ### 🌐 3. Inicie a API da aplicação
 Abra outro terminal e execute:
@@ -47,6 +50,11 @@ Abra outro terminal e execute:
 cd NutriApp/api_nutri_app
 lein ring server
 ```
+O serviço será iniciado na porta 3000. Teste-o com a url:
+```bash
+http://localhost:3000/
+```
+
 
 ### 🧠 4. Inicie a aplicação principal
 Abra um novo terminal e execute:
