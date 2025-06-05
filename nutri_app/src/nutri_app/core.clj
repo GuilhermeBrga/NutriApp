@@ -331,13 +331,13 @@
 
       (flush)
 
-      (let [nome-alimento (read-line)]
+      (let [nome_alimento (read-line)]
 
-        (if (= nome-alimento "0")
+        (if (= nome_alimento "0")
 
           (println "\n  Voltando ao menu anterior...\n")
 
-          (let [alimentos (buscar_alimento nome-alimento)]
+          (let [alimentos (buscar_alimento nome_alimento)]
 
             (if (or (nil? alimentos) (empty? alimentos))
 
@@ -362,7 +362,7 @@
                     (println "\n  Voltando ao menu anterior...\n")
 
                     (let [indice (dec (Integer/parseInt opcao))
-                          alimento-escolhido (nth alimentos indice {:descricao "Desconhecido" :energia-kcal "N/A"})]
+                          alimento_escolhido (nth alimentos indice {:descricao "Desconhecido" :energia-kcal "N/A"})]
 
                       (print "  Informe a quantidade do alimento escolhido (em gramas): ")
 
@@ -380,9 +380,9 @@
 
                             (salvar_alimento
 
-                              (:descricao alimento-escolhido)
+                              (:descricao alimento_escolhido)
                               (Integer/parseInt quantidade)
-                              (kcal_ajustado_alimento (Integer/parseInt quantidade) (:energia-kcal alimento-escolhido))
+                              (kcal_ajustado_alimento (Integer/parseInt quantidade) (:energia-kcal alimento_escolhido))
                               data
 
                               )
@@ -423,13 +423,13 @@
 
       (flush)
 
-      (let [nome-ativ (read-line)]
+      (let [nome_ativ (read-line)]
 
-        (if (= nome-ativ "0")
+        (if (= nome_ativ "0")
 
           (println "\n  Voltando ao menu anterior...\n")
 
-          (let [ativs (buscar_atividade_fisica nome-ativ)]
+          (let [ativs (buscar_atividade_fisica nome_ativ)]
 
             (if (or (nil? ativs) (empty? ativs))
 
@@ -455,7 +455,7 @@
 
                     (let [indice (dec (Integer/parseInt opcao))
 
-                          atividade-escolhida (nth ativs indice {:descricao "Desconhecida" :energia-kcal 0})]
+                          atividade_escolhida (nth ativs indice {:descricao "Desconhecida" :energia-kcal 0})]
 
                       (print "  Informe a duração da atividade (em minutos): ")
 
@@ -471,9 +471,9 @@
 
                           (if (formato_data data)
 
-                            (salvar_atividade (:descricao atividade-escolhida)
+                            (salvar_atividade (:descricao atividade_escolhida)
                                               (Integer/parseInt duracao)
-                                              (kcal_ajustado_exercicio (Integer/parseInt duracao) (:energia-kcal atividade-escolhida))
+                                              (kcal_ajustado_exercicio (Integer/parseInt duracao) (:energia-kcal atividade_escolhida))
                                               data)
 
                             (println "\n  Formato da data está invalido... Tente novamente!\n")
@@ -530,7 +530,7 @@
 
                         ativ_fis (buscar_ativ_fis)]
 
-                    (println "\n  ===== RELATÓRIO DO USUÁRIO =====")
+                    (println "\n  ==================== RELATÓRIO DO USUÁRIO ====================")
                     (println (str "  Nome: "   (:nome usuario)))
                     (println (str "  Idade: "  (:idade usuario) " anos"))
                     (println (str "  Peso: "   (:peso usuario) " kg"))
@@ -561,7 +561,7 @@
 
                               (str "  Alimento: " (:alimento alimento)
                                    " | Quantidade: " (:quantidade alimento) " g"
-                                   " (" (:kcal alimento) " kcal)"
+                                   " (" (format "%.2f" (:kcal alimento)) " kcal)"
                                    " | Data de registro: " (:dataConsumo alimento)
                                    "\n"
                                    )
@@ -587,14 +587,12 @@
 
                         (println "  =================================\n")
 
-                        (let [total-kcal-alimentos (reduce + (map :kcal alimentos))
-                              total-kcal-atividades (reduce + (map :kcal ativ_fis))
-                              saldo (- total-kcal-alimentos total-kcal-atividades)]
+                        (let [total_kcal_alimentos (reduce + (map :kcal alimentos))
+                              total_kcal_atividades (reduce + (map :kcal ativ_fis))
+                              saldo (- total_kcal_alimentos total_kcal_atividades)]
 
                           (println "\n  ===== RESUMO CALÓRICO DO PERÍODO =====\n")
-                          (println (str "  Total de calorias acumuladas: " total-kcal-alimentos " kcal"))
-                          (println (str "  Total de calorias gastas:     " total-kcal-atividades " kcal"))
-                          (println (str "  Saldo calórico final:         " saldo " kcal\n"))
+                          (println "  Nenhum dado registrado para o período especificado!\n")
                           (println "  =======================================\n")
 
                           )
@@ -614,7 +612,7 @@
 
                               (str "  Atividade: " (:atividade ativ)
                                    " | Tempo: " (:tempo ativ) " min"
-                                   " (" (:kcal ativ) " kcal)"
+                                   " (" (format "%.2f" (:kcal ativ)) " kcal)"
                                    " | Data de registro: " (:dataAtividade ativ)
                                    "\n"
                                    )
@@ -627,15 +625,15 @@
 
                         (println "  =================================\n")
 
-                        (let [total-kcal-alimentos (reduce + (map :kcal alimentos))
-                              total-kcal-atividades (reduce + (map :kcal ativ_fis))
-                              saldo (- total-kcal-alimentos total-kcal-atividades)]
+                        (let [total_kcal_alimentos (reduce + (map :kcal alimentos))
+                              total_kcal_atividades (reduce + (map :kcal ativ_fis))
+                              saldo (- total_kcal_alimentos total_kcal_atividades)]
 
                           (println "\n  ===== RESUMO CALÓRICO DO PERÍODO =====\n")
-                          (println (str "  Total de calorias acumuladas: " total-kcal-alimentos " kcal"))
-                          (println (str "  Total de calorias gastas:     " total-kcal-atividades " kcal"))
-                          (println (str "  Saldo calórico final:         " saldo " kcal\n"))
-                          (println "  =======================================\n")
+                          (println (str "  Total de calorias acumuladas: " (format "%.2f" total_kcal_alimentos) " kcal"))
+                          (println (str "  Total de calorias gastas:     " (format "%.2f" total_kcal_atividades) " kcal"))
+                          (println (str "  Saldo calórico final:         " (format "%.2f" saldo) " kcal\n"))
+                          (println "  =====================================================================\n")
 
                           )
                         )
@@ -657,7 +655,7 @@
     )
   )
 
-(defn menu-acao [opcao]
+(defn menu_acao [opcao]
 
   (cond
 
@@ -674,7 +672,7 @@
     )
   )
 
-(defn menu-recursivo []
+(defn menu_recursivo []
 
   (menu_geral)
 
@@ -686,7 +684,7 @@
 
       (do
 
-        (menu-acao opcao)
+        (menu_acao opcao)
 
         (recur)
 
@@ -697,6 +695,6 @@
 
 (defn -main []
 
-  (menu-recursivo)
+  (menu_recursivo)
 
   )
