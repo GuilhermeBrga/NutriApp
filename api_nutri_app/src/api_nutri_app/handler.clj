@@ -63,9 +63,11 @@
   (float (/ cal_hora 60))
 )
 
-(defn buscar_atividade_fisica [atividade]
+
+(defn buscar_atividade_fisica [atividade peso]
   (let [url "https://api.api-ninjas.com/v1/caloriesburned"
-        query_params {"activity" atividade}]
+        query_params {"activity" atividade
+                      "weight" (str peso)}]
     (try
       (let [response (http/get url
                                {:headers {"X-Api-Key" api_key_ninja}
@@ -80,15 +82,18 @@
               dados))
 
       (catch Exception e
-        (println "Erro ao buscar calorias:" (.getMessage e))
-        )
-      )
-    )
-  )
-
-(defn buscar_resultados_atividade_fisica [exercicio]
-  (buscar_atividade_fisica (traduzir_resultados exercicio "pt" "en"))
+        (println "Erro ao buscar calorias:" (.getMessage e)))))
 )
+
+
+;; peso em libras
+(defn buscar_resultados_atividade_fisica [exercicio]
+  (buscar_atividade_fisica 
+  (traduzir_resultados exercicio "pt" "en") 
+  (* (:peso (first @dados_user)) 2.20462)
+  )
+)
+
 
 
 (defroutes app-routes
@@ -181,7 +186,6 @@
              )
 
 
-
            (GET "/dados/user" []
              {:status 200
               :headers {"Content-Type" "application/json"}
@@ -221,6 +225,38 @@
                 :body (json/encode ativ_fis_filtrados)}))
 
            
+            (GET "/dados/calorias" []
+             (try
+               (let [formatter (DateTimeFormatter/ofPattern "dd/MM/yyyy")
+                     {:keys [inicio fim]} (first @datas_relatorio)
+                     inicio_ts (.toEpochDay (LocalDate/parse inicio formatter))
+                     fim_ts    (.toEpochDay (LocalDate/parse fim formatter))
+
+                     alimentos_filtrados (filter
+                                           (fn [{:keys [dataConsumo]}]
+                                             (let [data_ts (.toEpochDay (LocalDate/parse dataConsumo formatter))]
+                                               (<= inicio_ts data_ts fim_ts)))
+                                           @alimentos_user)
+
+                     ativ_fis_filtrados (filter
+                                          (fn [{:keys [dataAtividade]}]
+                                            (let [data_ts (.toEpochDay (LocalDate/parse dataAtividade formatter))]
+                                              (<= inicio_ts data_ts fim_ts)))
+                                          @atividades_user)
+
+                     calorias_ganhas (reduce + (map #(:kcal %) alimentos_filtrados))
+                     calorias_gastas (reduce + (map #(:kcal %) ativ_fis_filtrados))
+
+                     saldo_calorico (- calorias_ganhas calorias_gastas)]
+
+
+                 {:status 200
+                  :headers {"Content-Type" "application/json"}
+                  :body (json/encode {:calorias_consumidas calorias_ganhas
+                                      :calorias_gastas     calorias_gastas
+                                      :saldo_calorico      saldo_calorico})}))
+            )
+
            (route/not-found "Not Found")
 
            )
