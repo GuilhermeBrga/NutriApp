@@ -348,7 +348,7 @@
         (println (str "  Idade: "  (:idade usuario) " anos"))
         (println (str "  Peso: "   (:peso usuario) " kg"))
         (println (str "  Altura: " (:altura usuario) " cm"))
-        (println (str "  Sexo: "   (:sexo usuario)))
+        (println (str "  Sexo: "   (if (= (:sexo usuario) "M") "Masculino" "Feminino")))
         (println "  =================================\n")
 
         )
@@ -386,13 +386,15 @@
 
             (if (or (nil? alimentos) (empty? alimentos))
 
-              (println "Nenhum alimento encontrado para esse nome!")
+              (println "\n  Nenhum alimento encontrado para esse nome!\n")
 
               (do
 
+                (print "\n")
+
                 (run! (fn [[idx alimento]]
 
-                        (println (str "\n  " (inc idx) " - " (:descricao alimento))))
+                        (println (str "  " (inc idx) " - " (:descricao alimento))))
 
                       (map-indexed vector alimentos))
 
@@ -409,33 +411,43 @@
                     (let [indice (dec (Integer/parseInt opcao))
                           alimento_escolhido (nth alimentos indice {:descricao "Desconhecido" :energia-kcal "N/A"})]
 
-                      (print "  Informe a quantidade do alimento escolhido (em gramas): ")
+                      (if (or (< indice 0) (> indice 9))
 
-                      (flush)
+                        (print "\n  Opção fora do escopo!\n\n")
 
-                      (let [quantidade (read-line)]
+                        (do
 
-                        (print "  Informe a data do consumo (DD/MM/AAAA): ")
+                          (print "  Informe a quantidade do alimento escolhido (em gramas): ")
 
-                        (flush)
+                          (flush)
 
-                        (let [data (read-line)]
+                          (let [quantidade (read-line)]
 
-                          (if (formato_data data)
+                            (print "  Informe a data do consumo (DD/MM/AAAA): ")
 
-                            (salvar_alimento
+                            (flush)
 
-                              (:descricao alimento_escolhido)
-                              (Integer/parseInt quantidade)
-                              (kcal_ajustado_alimento (Integer/parseInt quantidade) (:energia-kcal alimento_escolhido))
-                              data
+                            (let [data (read-line)]
 
+                              (if (formato_data data)
+
+                                (salvar_alimento
+
+                                  (:descricao alimento_escolhido)
+                                  (Integer/parseInt quantidade)
+                                  (kcal_ajustado_alimento (Integer/parseInt quantidade) (:energia-kcal alimento_escolhido))
+                                  data
+
+                                  )
+
+                                (println "\n  Formato da data está invalido... Tente novamente!\n")
+
+                                )
                               )
-
-                            (println "\n  Formato da data está invalido... Tente novamente!\n")
-
                             )
+
                           )
+
                         )
                       )
                     )
@@ -478,13 +490,15 @@
 
             (if (or (nil? ativs) (empty? ativs))
 
-              (println "\n  Nenhuma atividade encontrada com esse nome!")
+              (println "\n  Nenhuma atividade encontrada com esse nome!\n")
 
               (do
 
+                (print "\n")
+
                 (run! (fn [[idx ativ]]
 
-                        (println (str "\n  " (inc idx) " - " (:descricao ativ))))
+                        (println (str "  " (inc idx) " - " (:descricao ativ))))
 
                       (map-indexed vector ativs))
 
@@ -498,31 +512,40 @@
 
                     (println "\n  Voltando ao menu anterior...\n")
 
-                    (let [indice (dec (Integer/parseInt opcao))
+                    (let [indice (dec (Integer/parseInt opcao))]
 
-                          atividade_escolhida (nth ativs indice {:descricao "Desconhecida" :energia-kcal 0})]
+                      (if (or (< indice 0) (> indice 9))
 
-                      (print "  Informe a duração da atividade (em minutos): ")
+                        (print "\n  Opção fora do escopo!\n\n")
 
-                      (flush)
+                        (do
 
-                      (let [duracao (read-line)]
+                          (let [atividade_escolhida (nth ativs indice)]
 
-                        (print "  Informe a data da atividade (DD/MM/AAAA): ")
+                            (print "  Informe a duração da atividade (em minutos): ")
 
-                        (flush)
+                            (flush)
 
-                        (let [data (read-line)]
+                            (let [duracao (read-line)]
 
-                          (if (formato_data data)
+                              (print "  Informe a data da atividade (DD/MM/AAAA): ")
 
-                            (salvar_atividade (:descricao atividade_escolhida)
-                                              (Integer/parseInt duracao)
-                                              (kcal_ajustado_exercicio (Integer/parseInt duracao) (:energia-kcal atividade_escolhida))
-                                              data)
+                              (flush)
 
-                            (println "\n  Formato da data está invalido... Tente novamente!\n")
+                              (let [data (read-line)]
 
+                                (if (formato_data data)
+
+                                  (salvar_atividade (:descricao atividade_escolhida)
+                                                    (Integer/parseInt duracao)
+                                                    (kcal_ajustado_exercicio (Integer/parseInt duracao) (:energia-kcal atividade_escolhida))
+                                                    data)
+
+                                  (println "\n  Formato da data está invalido... Tente novamente!\n")
+
+                                  )
+                                )
+                              )
                             )
                           )
                         )
